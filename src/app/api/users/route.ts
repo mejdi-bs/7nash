@@ -54,13 +54,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Update skin if provided
-      if (selectedSkin) {
-        await prisma.user.update({
-          where: { id: existingUser.id },
-          data: { selectedSkin }
-        });
-      }
+      // Update skin and lastActiveAt
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          selectedSkin: selectedSkin || existingUser.selectedSkin,
+          lastActiveAt: new Date()
+        }
+      });
 
       return NextResponse.json({
         username: existingUser.username,
@@ -77,7 +78,8 @@ export async function POST(request: NextRequest) {
       data: {
         username: trimmedName,
         passwordHash,
-        selectedSkin: selectedSkin || 'classic'
+        selectedSkin: selectedSkin || 'classic',
+        lastActiveAt: new Date()
       }
     });
 

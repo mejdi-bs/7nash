@@ -103,15 +103,31 @@ export function Game() {
     setShowTutorial(!tutorialSeen);
     setMounted(true);
 
-    // Simulate online players jitter
-    const interval = setInterval(() => {
-      setOnlinePlayers(prev => {
-        const change = Math.random() > 0.5 ? 1 : -1;
-        return Math.max(5, Math.min(25, prev + change));
-      });
-    }, 5000);
+    // Fetch real online count and update user activity
+    const onlineInterval = setInterval(async () => {
+      try {
+        // Update current user's activity
+        if (savedUsername) {
+          fetch('/api/online', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: savedUsername })
+          }).catch(() => {});
+        }
 
-    return () => clearInterval(interval);
+        // Get online count
+        const res = await fetch('/api/online');
+        const data = await res.json();
+        setOnlinePlayers(data.count || 1);
+      } catch {
+        setOnlinePlayers(1);
+      }
+    }, 30000);
+
+    // Initial fetch
+    fetch('/api/online').then(res => res.json()).then(data => setOnlinePlayers(data.count || 1)).catch(() => {});
+
+    return () => clearInterval(onlineInterval);
   }, []);
 
   // Sync high score to API whenever it changes

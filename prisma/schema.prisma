@@ -13,6 +13,7 @@ model User {
   passwordHash String?
   highScore    Int      @default(0)
   selectedSkin String   @default("classic")
+  lastActiveAt DateTime @default(now())
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
