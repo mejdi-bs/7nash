@@ -1,7 +1,11 @@
-// Core position type
 export interface Position {
   x: number;
   y: number;
+}
+
+// Entity with spawn timestamp for animations
+export interface GameEntity extends Position {
+  spawnTime: number;
 }
 
 // Direction types
@@ -16,15 +20,18 @@ export type GameStatus = 'idle' | 'playing' | 'paused' | 'gameOver';
 // Main game state interface
 export interface GameState {
   snake: Position[];
-  food: Position;
-  bomb: Position | null;
-  pineapple: Position | null;
+  food: GameEntity;
+  bomb: GameEntity | null;
+  pineapple: GameEntity | null;
   direction: Direction;
   nextDirection: Direction;
   score: number;
   highScore: number;
   difficulty: Difficulty;
   status: GameStatus;
+  lastMoveTime: number;
+  lastEatTime: number;
+  lastEatType: 'food' | 'pineapple' | null;
 }
 
 // Game action types for reducer

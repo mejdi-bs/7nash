@@ -1,4 +1,4 @@
-import type { Position, Direction, GameState } from '@/types';
+import type { Position, Direction, GameState, GameEntity } from '@/types';
 import {
   TILE_COUNT,
   DIRECTION_VECTORS,
@@ -45,21 +45,21 @@ export function isOnPineapple(position: Position, pineapple: Position | null): b
 }
 
 // Spawn food at valid position
-export function spawnFood(snake: Position[]): Position {
+export function spawnFood(snake: Position[]): GameEntity {
   let food: Position;
   do {
     food = getRandomPosition();
   } while (isOnSnake(food, snake));
-  return food;
+  return { ...food, spawnTime: Date.now() };
 }
 
 // Spawn bomb at valid position
-export function spawnBomb(snake: Position[], food: Position): Position {
+export function spawnBomb(snake: Position[], food: Position): GameEntity {
   let bomb: Position;
   do {
     bomb = getRandomPosition();
   } while (isOnSnake(bomb, snake) || isOnFood(bomb, food));
-  return bomb;
+  return { ...bomb, spawnTime: Date.now() };
 }
 
 // Spawn pineapple at valid position
@@ -67,7 +67,7 @@ export function spawnPineapple(
   snake: Position[],
   food: Position,
   bomb: Position | null
-): Position {
+): GameEntity {
   let pineapple: Position;
   do {
     pineapple = getRandomPosition();
@@ -76,7 +76,7 @@ export function spawnPineapple(
     isOnFood(pineapple, food) ||
     isOnBomb(pineapple, bomb)
   );
-  return pineapple;
+  return { ...pineapple, spawnTime: Date.now() };
 }
 
 // Check wall collision
@@ -133,7 +133,7 @@ export function getDirectionFromKey(key: string): Direction | null {
 export function getInitialState(): GameState {
   return {
     snake: [...INITIAL_SNAKE],
-    food: { ...INITIAL_FOOD },
+    food: { ...INITIAL_FOOD, spawnTime: Date.now() },
     bomb: null,
     pineapple: null,
     direction: INITIAL_DIRECTION,
@@ -142,6 +142,9 @@ export function getInitialState(): GameState {
     highScore: 0,
     difficulty: 'easy',
     status: 'idle',
+    lastMoveTime: Date.now(),
+    lastEatTime: 0,
+    lastEatType: null,
   };
 }
 
@@ -225,6 +228,9 @@ export function moveSnake(state: GameState): {
       score: newScore,
       highScore: newHighScore,
       pineapple: atePineapple ? null : pineapple,
+      lastMoveTime: Date.now(),
+      lastEatTime: (ateFood || atePineapple) ? Date.now() : state.lastEatTime,
+      lastEatType: ateFood ? 'food' : atePineapple ? 'pineapple' : state.lastEatType,
     },
     ateFood,
     hitBomb,

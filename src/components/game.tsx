@@ -20,6 +20,8 @@ import {
   setHighScore as saveHighScore,
   hasSeenTutorial,
   markTutorialSeen,
+  getSelectedSkin,
+  setSelectedSkin as saveSelectedSkin,
 } from '@/lib/utils/storage';
 import { useGameLoop } from '@/hooks/use-game-loop';
 import { useSound } from '@/hooks/use-sound';
@@ -30,6 +32,17 @@ import { DifficultySelector } from './difficulty-selector';
 import { GameControls } from './game-controls';
 import { GameOverlay } from './game-overlay';
 import { Tutorial } from './tutorial';
+import { SkinSelector } from './skin-selector';
+import {
+  SNAKE_SKINS,
+  getSkinById,
+  getUnlockedSkins,
+  createParticles,
+  createTrailParticle,
+  updateParticles,
+  type SnakeSkin,
+  type Particle,
+} from '@/lib/game/skins';
 
 export function Game() {
   const [gameState, setGameState] = useState<GameState>(() => getInitialState());
@@ -38,6 +51,9 @@ export function Game() {
   const [floatingScores, setFloatingScores] = useState<
     Array<{ id: number; text: string; color: string; x: number; y: number }>
   >([]);
+  const [selectedSkin, setSelectedSkin] = useState<SnakeSkin>(() => getSkinById('classic'));
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   const bombTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pineappleTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,12 +61,24 @@ export function Game() {
 
   const { playSound } = useSound();
 
-  // Initialize high score and tutorial state on mount
+  // Load initial state from localStorage safely after mount
   useEffect(() => {
     const highScore = getHighScore();
+    const savedSkinId = getSelectedSkin();
+    const tutorialSeen = hasSeenTutorial();
+
     setGameState((prev) => ({ ...prev, highScore }));
-    setShowTutorial(!hasSeenTutorial());
+    setSelectedSkin(getSkinById(savedSkinId));
+    setShowTutorial(!tutorialSeen);
+    setMounted(true);
   }, []);
+
+  // Sync high score to localStorage whenever it changes
+  useEffect(() => {
+    if (mounted && gameState.highScore > 0) {
+      saveHighScore(gameState.highScore);
+    }
+  }, [gameState.highScore, mounted]);
 
   // Show floating score at snake head
   const showFloatingScoreAtHead = useCallback(
@@ -97,10 +125,10 @@ export function Game() {
         playSound('eat');
         showFloatingScoreAtHead(newState.snake, '+1', '#4ecca3');
 
-        // Update high score
-        if (newState.score > newState.highScore) {
-          saveHighScore(newState.score);
-        }
+        // Create particles at food position
+        const foodX = prevState.food.x * 20 + 10;
+        const foodY = prevState.food.y * 20 + 10;
+        setParticles((prev) => [...prev, ...createParticles(foodX, foodY, '#4ecca3', 8)]);
 
         // Spawn new food
         const newFood = spawnFood(newState.snake);
@@ -130,11 +158,6 @@ export function Game() {
         playSound('pineapple');
         showFloatingScoreAtHead(newState.snake, '+5', '#ffd700');
 
-        // Update high score
-        if (newState.score > newState.highScore) {
-          saveHighScore(newState.score);
-        }
-
         if (pineappleTimerRef.current) {
           clearTimeout(pineappleTimerRef.current);
           pineappleTimerRef.current = null;
@@ -152,6 +175,35 @@ export function Game() {
     isPaused: gameState.status === 'paused',
     onTick: handleTick,
   });
+
+  // Update particles animation
+  useEffect(() => {
+    if (particles.length === 0) return;
+
+    const interval = setInterval(() => {
+      setParticles((prev) => updateParticles(prev));
+    }, 16);
+
+    return () => clearInterval(interval);
+  }, [particles.length]);
+
+  // Emit trail particles on move
+  useEffect(() => {
+    if (gameState.status !== 'playing') return;
+
+    const newTrail: Particle[] = [];
+    gameState.snake.forEach((segment, index) => {
+      // Only emit from head and every few segments to keep it clean and performant
+      if (index % 2 === 0) {
+        const x = segment.x * 20 + 10;
+        const y = segment.y * 20 + 10;
+        const color = selectedSkin.bodyColor(index);
+        newTrail.push(createTrailParticle(x, y, color));
+      }
+    });
+
+    setParticles((prev) => [...prev.slice(-50), ...newTrail]);
+  }, [gameState.lastMoveTime, gameState.status, selectedSkin]);
 
   // Start game
   const startGame = useCallback(() => {
@@ -208,6 +260,12 @@ export function Game() {
     markTutorialSeen();
   }, []);
 
+  // Change skin
+  const changeSkin = useCallback((skin: SnakeSkin) => {
+    setSelectedSkin(skin);
+    saveSelectedSkin(skin.id);
+  }, []);
+
   // Restart game
   const restartGame = useCallback(() => {
     startGame();
@@ -251,7 +309,7 @@ export function Game() {
   );
 
   return (
-    <div className="min-h-screen flex justify-center items-center p-5 relative overflow-hidden">
+    <div className="min-h-screen flex justify-center items-center p-5 relative overflow-hidden bg-game-dark">
       {/* Background animations */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="bg-blob absolute -top-25 -left-25" />
@@ -307,12 +365,18 @@ export function Game() {
           disabled={gameState.status === 'playing'}
         />
 
+        <SkinSelector
+          skins={SNAKE_SKINS}
+          selectedSkin={selectedSkin}
+          highScore={gameState.highScore}
+          onSelect={changeSkin}
+          disabled={gameState.status === 'playing'}
+        />
+
         <GameCanvas
-          snake={gameState.snake}
-          food={gameState.food}
-          bomb={gameState.bomb}
-          pineapple={gameState.pineapple}
-          direction={gameState.direction}
+          state={gameState}
+          skin={selectedSkin}
+          particles={particles}
           onTouchStart={startGame}
           onSwipe={handleSwipe}
         />

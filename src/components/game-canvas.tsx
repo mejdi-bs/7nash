@@ -1,26 +1,21 @@
-'use client';
-
 import { useRef, useEffect, useCallback } from 'react';
-import type { Position, Direction } from '@/types';
+import type { GameState, Direction } from '@/types';
 import { CANVAS_SIZE } from '@/lib/game/constants';
 import { drawGame } from '@/lib/game/renderer';
+import type { SnakeSkin, Particle } from '@/lib/game/skins';
 
 interface GameCanvasProps {
-  snake: Position[];
-  food: Position;
-  bomb: Position | null;
-  pineapple: Position | null;
-  direction: Direction;
+  state: GameState;
+  skin: SnakeSkin;
+  particles: Particle[];
   onTouchStart?: () => void;
   onSwipe?: (direction: Direction) => void;
 }
 
 export function GameCanvas({
-  snake,
-  food,
-  bomb,
-  pineapple,
-  direction,
+  state,
+  skin,
+  particles,
   onTouchStart,
   onSwipe,
 }: GameCanvasProps) {
@@ -36,10 +31,10 @@ export function GameCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    drawGame(ctx, CANVAS_SIZE, snake, food, bomb, pineapple, direction, Date.now());
-  }, [snake, food, bomb, pineapple, direction]);
+    drawGame(ctx, CANVAS_SIZE, state, Date.now(), skin, particles);
+  }, [state, skin, particles]);
 
-  // Animation loop for smooth rendering (especially bomb animation)
+  // Animation loop for smooth rendering
   useEffect(() => {
     const animate = () => {
       render();
@@ -104,7 +99,9 @@ export function GameCanvas({
 
   // Prevent scrolling when touching the canvas
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
+    // Note: React 17+ event handles might be passive by default, 
+    // but in some environments this might need capture/non-passive listeners.
+    // e.preventDefault();
   }, []);
 
   return (

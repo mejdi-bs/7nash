@@ -85,4 +85,5 @@ export const COLORS = {
 export const STORAGE_KEYS = {
   highScore: 'snakeHighScore',
   tutorialSeen: 'snakeTutorialSeen',
+  selectedSkin: 'snakeSelectedSkin',
 } as const;

@@ -29,6 +29,9 @@ const config: Config = {
         'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
         'float-score': 'floatingScore 0.8s ease-out forwards',
         'pulse-bomb': 'pulseBomb 0.15s ease-in-out infinite',
+        'fade-in': 'fadeIn 0.5s ease-out forwards',
+        'scale-in': 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+        'slide-up': 'slideUp 0.4s ease-out forwards',
       },
       keyframes: {
         gradientBG: {
@@ -61,6 +64,18 @@ const config: Config = {
         pulseBomb: {
           '0%, 100%': { boxShadow: '0 0 12px #ff0000' },
           '50%': { boxShadow: '0 0 18px #ff0000' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.9) translateY(10px)', opacity: '0' },
+          '100%': { transform: 'scale(1) translateY(0)', opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
         },
       },
       fontFamily: {
