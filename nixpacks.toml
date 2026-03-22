@@ -1,10 +1,13 @@
 [phases.setup]
 
 [phases.build]
-cmds = ["prisma generate && next build"]
+# Nixpacks auto-detects Next.js and runs next build
+# Ensure prisma client is generated first
+cmds = ["prisma generate"]
 
 [start]
-cmd = "npx prisma db push --skip-generate && node server.js"
+# Use npm start (next start) for standard Next.js, run db migration first
+cmd = "npx prisma db push --skip-generate && npm start"
 
 [variables]
 NODE_ENV = "production"
