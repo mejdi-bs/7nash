@@ -2,10 +2,10 @@
 
 [phases.build]
 # Run prisma generate then next build
-cmds = ["prisma generate", "next build"]
+cmds = ["npx prisma generate", "npm run build"]
 
 [start]
-cmd = "npx prisma db push --skip-generate && npm start"
+cmd = "npx prisma db push --skip-generate && npm run start"
 
 [variables]
 NODE_ENV = "production"

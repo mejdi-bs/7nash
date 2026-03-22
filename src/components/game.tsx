@@ -112,7 +112,7 @@ export function Game() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: savedUsername })
-          }).catch(() => {});
+          }).catch(() => { });
         }
 
         // Get online count
@@ -125,7 +125,7 @@ export function Game() {
     }, 30000);
 
     // Initial fetch
-    fetch('/api/online').then(res => res.json()).then(data => setOnlinePlayers(data.count || 1)).catch(() => {});
+    fetch('/api/online').then(res => res.json()).then(data => setOnlinePlayers(data.count || 1)).catch(() => { });
 
     return () => clearInterval(onlineInterval);
   }, []);
@@ -375,60 +375,81 @@ export function Game() {
 
       {/* Main Game Interface */}
       {username && mounted && (
-        <div className={`glass-container p-8 text-center relative z-20 ${isShaking ? 'animate-shake' : ''}`}>
-          <div className="flex justify-between items-start mb-1">
-            <h1 className="text-game-teal text-4xl font-bold flex items-center gap-2 [text-shadow:2px_2px_4px_rgba(0,0,0,0.3)]">
+        <div className={`glass-container w-[90vw] min-h-[90vh] p-4 sm:p-8 flex flex-col items-center justify-between relative z-20 overflow-y-auto ${isShaking ? 'animate-shake' : ''}`}>
+          <div className="w-full flex justify-between items-center mb-4">
+            <h1 className="text-game-teal text-3xl sm:text-4xl font-bold flex items-center gap-2 [text-shadow:2px_2px_4px_rgba(0,0,0,0.3)]">
               🐍 Snake
             </h1>
-            <button onClick={handleLogout} className="p-2 text-white/40 hover:text-game-red transition-colors group relative" title="Logout">
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-          <p className="text-game-cyan mb-5 text-left text-sm opacity-80">Welcome, <span className="text-white font-bold">{username}</span>!</p>
-
-          <ScoreDisplay score={gameState.score} highScore={gameState.highScore} />
-
-          <DifficultySelector
-            difficulty={gameState.difficulty}
-            onChange={changeDifficulty}
-            disabled={gameState.status === 'playing'}
-          />
-
-          <SkinSelector
-            skins={SNAKE_SKINS}
-            selectedSkin={selectedSkin}
-            highScore={gameState.highScore}
-            onSelect={changeSkin}
-            disabled={gameState.status === 'playing'}
-          />
-
-          <GameCanvas
-            state={gameState}
-            skin={selectedSkin}
-            particles={particles}
-            onTouchStart={startGame}
-            onSwipe={handleSwipe}
-          />
-
-          {/* Control Buttons */}
-          <div className="mt-5 flex justify-center gap-4">
-            <button
-              onClick={() => gameState.status !== 'playing' && restartGame()}
-              className="px-8 py-3 text-lg bg-gradient-to-br from-game-teal to-game-teal-dark text-game-dark font-bold rounded-lg flex items-center gap-2 hover:scale-105 hover:shadow-[0_5px_15px_rgba(78,204,163,0.4)] transition-all"
-            >
-              {gameState.status === 'playing' ? <><Gamepad2 className="w-5 h-5" /> Playing...</> : <><Play className="w-5 h-5" /> Start Game</>}
-            </button>
-            <button
-              onClick={togglePause}
-              disabled={gameState.status !== 'playing' && gameState.status !== 'paused'}
-              className="px-8 py-3 text-lg bg-gradient-to-br from-game-red to-game-red-dark text-white font-bold rounded-lg flex items-center gap-2 hover:scale-105 hover:shadow-[0_5px_15px_rgba(233,69,96,0.4)] transition-all disabled:opacity-50"
-            >
-              {gameState.status === 'paused' ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
-              {gameState.status === 'paused' ? 'Resume' : 'Pause'}
-            </button>
+            <div className="flex items-center gap-4">
+              <p className="hidden sm:block text-game-cyan text-sm opacity-80">Welcome, <span className="text-white font-bold">{username}</span>!</p>
+              <button onClick={handleLogout} className="p-2 text-white/40 hover:text-game-red transition-colors group relative bg-white/5 rounded-lg border border-white/10" title="Logout">
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          <GameControls onDirectionChange={changeDirection} onStart={startGame} isRunning={gameState.status === 'playing'} />
+          <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6 items-start">
+            {/* Left Column: Stats & Difficulty */}
+            <div className="flex flex-col gap-6 order-2 lg:order-1">
+              <ScoreDisplay score={gameState.score} highScore={gameState.highScore} />
+              <DifficultySelector
+                difficulty={gameState.difficulty}
+                onChange={changeDifficulty}
+                disabled={gameState.status === 'playing'}
+              />
+              <div className="lg:block hidden">
+                <GameControls onDirectionChange={changeDirection} onStart={startGame} isRunning={gameState.status === 'playing'} />
+              </div>
+            </div>
+
+            {/* Middle Column: Canvas */}
+            <div className="flex flex-col items-center order-1 lg:order-2">
+              <div className="relative group">
+                <div className="absolute -inset-2 bg-gradient-to-r from-game-teal/20 to-game-cyan/20 rounded-xl blur-xl transition-all group-hover:blur-2xl opacity-50" />
+                <GameCanvas
+                  state={gameState}
+                  skin={selectedSkin}
+                  particles={particles}
+                  onTouchStart={startGame}
+                  onSwipe={handleSwipe}
+                />
+              </div>
+
+              {/* Control Buttons - Desktop */}
+              <div className="mt-6 flex justify-center gap-4 w-full">
+                <button
+                  onClick={() => gameState.status !== 'playing' && restartGame()}
+                  className="flex-1 max-w-[200px] px-6 py-4 text-sm sm:text-base bg-gradient-to-br from-game-teal to-game-teal-dark text-game-dark font-bold rounded-xl flex items-center justify-center gap-2 hover:scale-105 hover:shadow-[0_8px_20px_rgba(78,204,163,0.4)] transition-all active:scale-95"
+                >
+                  {gameState.status === 'playing' ? <><Gamepad2 className="w-5 h-5" /> Playing...</> : <><Play className="w-5 h-5" /> Start Game</>}
+                </button>
+                <button
+                  onClick={togglePause}
+                  disabled={gameState.status !== 'playing' && gameState.status !== 'paused'}
+                  className="flex-1 max-w-[200px] px-6 py-4 text-sm sm:text-base bg-gradient-to-br from-game-red to-game-red-dark text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:scale-105 hover:shadow-[0_8px_20px_rgba(233,69,96,0.4)] transition-all disabled:opacity-50 active:scale-95"
+                >
+                  {gameState.status === 'paused' ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+                  {gameState.status === 'paused' ? 'Resume' : 'Pause'}
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Skins & Mobile Controls */}
+            <div className="flex flex-col gap-6 order-3">
+              <SkinSelector
+                skins={SNAKE_SKINS}
+                selectedSkin={selectedSkin}
+                highScore={gameState.highScore}
+                onSelect={changeSkin}
+                disabled={gameState.status === 'playing'}
+              />
+              <div className="lg:hidden block">
+                <GameControls onDirectionChange={changeDirection} onStart={startGame} isRunning={gameState.status === 'playing'} />
+              </div>
+            </div>
+          </div>
+
+          <div className="h-4" /> {/* Spacer */}
         </div>
       )}
 
