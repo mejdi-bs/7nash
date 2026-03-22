@@ -43,6 +43,7 @@ import { GameControls } from './game-controls';
 import { GameOverlay } from './game-overlay';
 import { Tutorial } from './tutorial';
 import { SkinSelector } from './skin-selector';
+import { Leaderboard } from './leaderboard';
 import { BackgroundSnakes } from './background-snakes';
 import {
   SNAKE_SKINS,
@@ -391,6 +392,7 @@ export function Game() {
             {/* Left Column: Stats & Difficulty */}
             <div className="flex flex-col gap-6 order-2 lg:order-1">
               <ScoreDisplay score={gameState.score} highScore={gameState.highScore} />
+              <Leaderboard />
               <DifficultySelector
                 difficulty={gameState.difficulty}
                 onChange={changeDifficulty}
