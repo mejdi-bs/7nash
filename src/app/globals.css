@@ -28,12 +28,34 @@ body {
 /* Background ghost snakes */
 .bg-snake {
   position: absolute;
-  width: 300px;
-  height: 15px;
-  background: linear-gradient(90deg, transparent, rgba(78, 204, 163, 0.08), transparent);
-  border-radius: 20px;
+  width: 500px;
+  height: 25px;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(78, 204, 163, 0.15) 10%,
+      rgba(78, 204, 163, 0.3) 40%,
+      rgba(100, 255, 218, 0.4) 50%,
+      rgba(78, 204, 163, 0.3) 60%,
+      rgba(78, 204, 163, 0.15) 90%,
+      transparent 100%);
+  border-radius: 30px;
   filter: blur(2px);
-  animation: slither 30s linear infinite;
+  animation: slither 20s linear infinite;
+  z-index: -5;
+  box-shadow: 0 0 15px rgba(78, 204, 163, 0.1);
+}
+
+.bg-snake::before {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: #64ffda;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #64ffda;
 }
 
 /* Canvas styling */
@@ -55,9 +77,12 @@ body {
 
 /* Keyframes */
 @keyframes gradientBG {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -67,12 +92,15 @@ body {
   0% {
     transform: translate(0, 0) scale(1);
   }
+
   33% {
     transform: translate(100px, 50px) scale(1.1);
   }
+
   66% {
     transform: translate(-50px, 100px) scale(0.9);
   }
+
   100% {
     transform: translate(0, 0) scale(1);
   }
@@ -80,33 +108,46 @@ body {
 
 @keyframes slither {
   0% {
-    transform: translateX(0) translateY(0) rotate(5deg);
+    transform: translate(-600px, 0) skewX(10deg);
   }
+
   25% {
-    transform: translateX(calc(100vw + 600px)) translateY(100px) rotate(-5deg);
+    transform: translate(25vw, 50px) skewX(-10deg);
   }
+
   50% {
-    transform: translateX(calc(200vw + 1200px)) translateY(0) rotate(5deg);
+    transform: translate(50vw, -30px) skewX(10deg);
   }
-  51% {
-    transform: translateX(-400px) translateY(0);
+
+  75% {
+    transform: translate(75vw, 40px) skewX(-10deg);
   }
+
   100% {
-    transform: translateX(0) translateY(0) rotate(5deg);
+    transform: translate(130vw, 0) skewX(10deg);
   }
 }
 
 @keyframes shake {
-  10%, 90% {
+
+  10%,
+  90% {
     transform: translateX(-1px);
   }
-  20%, 80% {
+
+  20%,
+  80% {
     transform: translateX(2px);
   }
-  30%, 50%, 70% {
+
+  30%,
+  50%,
+  70% {
     transform: translateX(-4px);
   }
-  40%, 60% {
+
+  40%,
+  60% {
     transform: translateX(4px);
   }
 }
@@ -116,6 +157,7 @@ body {
     transform: translateY(0);
     opacity: 1;
   }
+
   100% {
     transform: translateY(-60px);
     opacity: 0;

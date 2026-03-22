@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Play, Pause, Gamepad2 } from 'lucide-react';
+import { Play, Pause, Gamepad2, LogOut, Users, Eye } from 'lucide-react';
 import type { GameState, Direction, Difficulty } from '@/types';
 import {
   getInitialState,
@@ -22,17 +22,25 @@ import {
   markTutorialSeen,
   getSelectedSkin,
   setSelectedSkin as saveSelectedSkin,
+  login as performLogin,
+  logout as performLogout,
+  getUsername,
+  getVisitCount,
+  incrementVisitCount,
+  getTopPlayers,
 } from '@/lib/utils/storage';
 import { useGameLoop } from '@/hooks/use-game-loop';
 import { useSound } from '@/hooks/use-sound';
 import { useKeyboard } from '@/hooks/use-keyboard';
 import { GameCanvas } from './game-canvas';
 import { ScoreDisplay } from './score-display';
+import { LoginForm } from './login-form';
 import { DifficultySelector } from './difficulty-selector';
 import { GameControls } from './game-controls';
 import { GameOverlay } from './game-overlay';
 import { Tutorial } from './tutorial';
 import { SkinSelector } from './skin-selector';
+import { BackgroundSnakes } from './background-snakes';
 import {
   SNAKE_SKINS,
   getSkinById,
@@ -53,7 +61,11 @@ export function Game() {
   >([]);
   const [selectedSkin, setSelectedSkin] = useState<SnakeSkin>(() => getSkinById('classic'));
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [username, setUsername] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [visitCount, setVisitCount] = useState(0);
+  const [onlinePlayers, setOnlinePlayers] = useState(12);
+  const [topPlayers, setTopPlayers] = useState<Array<{ name: string; highScore: number; skinId: string }>>([]);
 
   const bombTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pineappleTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,20 +75,40 @@ export function Game() {
 
   // Load initial state from localStorage safely after mount
   useEffect(() => {
-    const highScore = getHighScore();
-    const savedSkinId = getSelectedSkin();
+    const savedUsername = getUsername();
     const tutorialSeen = hasSeenTutorial();
+    const savedSkinId = getSelectedSkin();
 
-    setGameState((prev) => ({ ...prev, highScore }));
+    // Increment visit count on mount
+    const nextVisits = incrementVisitCount();
+    setVisitCount(nextVisits);
+    setTopPlayers(getTopPlayers(3));
+
+    setUsername(savedUsername);
+    setGameState((prev) => ({
+      ...prev,
+      highScore: getHighScore()
+    }));
     setSelectedSkin(getSkinById(savedSkinId));
     setShowTutorial(!tutorialSeen);
     setMounted(true);
+
+    // Simulate online players jitter
+    const interval = setInterval(() => {
+      setOnlinePlayers(prev => {
+        const change = Math.random() > 0.5 ? 1 : -1;
+        return Math.max(5, Math.min(25, prev + change));
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Sync high score to localStorage whenever it changes
   useEffect(() => {
     if (mounted && gameState.highScore > 0) {
       saveHighScore(gameState.highScore);
+      setTopPlayers(getTopPlayers(3)); // Refresh top players list
     }
   }, [gameState.highScore, mounted]);
 
@@ -101,40 +133,25 @@ export function Game() {
     []
   );
 
-  // Game tick handler
   const handleTick = useCallback(() => {
     setGameState((prevState) => {
       if (prevState.status !== 'playing') return prevState;
-
       const { newState, ateFood, hitBomb, atePineapple } = moveSnake(prevState);
-
-      // Handle game over
       if (newState.status === 'gameOver') {
-        if (hitBomb) {
-          playSound('bomb');
-        } else {
-          playSound('gameOver');
-        }
+        if (hitBomb) playSound('bomb');
+        else playSound('gameOver');
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 500);
         return newState;
       }
-
-      // Handle food eaten
       if (ateFood) {
         playSound('eat');
         showFloatingScoreAtHead(newState.snake, '+1', '#4ecca3');
-
-        // Create particles at food position
         const foodX = prevState.food.x * 20 + 10;
         const foodY = prevState.food.y * 20 + 10;
         setParticles((prev) => [...prev, ...createParticles(foodX, foodY, '#4ecca3', 8)]);
-
-        // Spawn new food
         const newFood = spawnFood(newState.snake);
         newState.food = newFood;
-
-        // Maybe spawn bomb
         if (!newState.bomb && shouldSpawnBomb()) {
           const newBomb = spawnBomb(newState.snake, newFood);
           newState.bomb = newBomb;
@@ -142,8 +159,6 @@ export function Game() {
             setGameState((s) => ({ ...s, bomb: null }));
           }, getBombDuration());
         }
-
-        // Maybe spawn pineapple
         if (!newState.pineapple && shouldSpawnPineapple()) {
           const newPineapple = spawnPineapple(newState.snake, newFood, newState.bomb);
           newState.pineapple = newPineapple;
@@ -152,23 +167,18 @@ export function Game() {
           }, getPineappleDuration());
         }
       }
-
-      // Handle pineapple eaten
       if (atePineapple) {
         playSound('pineapple');
         showFloatingScoreAtHead(newState.snake, '+5', '#ffd700');
-
         if (pineappleTimerRef.current) {
           clearTimeout(pineappleTimerRef.current);
           pineappleTimerRef.current = null;
         }
       }
-
       return newState;
     });
   }, [playSound, showFloatingScoreAtHead]);
 
-  // Use game loop
   useGameLoop({
     difficulty: gameState.difficulty,
     isRunning: gameState.status === 'playing',
@@ -176,24 +186,18 @@ export function Game() {
     onTick: handleTick,
   });
 
-  // Update particles animation
   useEffect(() => {
     if (particles.length === 0) return;
-
     const interval = setInterval(() => {
       setParticles((prev) => updateParticles(prev));
     }, 16);
-
     return () => clearInterval(interval);
   }, [particles.length]);
 
-  // Emit trail particles on move
   useEffect(() => {
     if (gameState.status !== 'playing') return;
-
     const newTrail: Particle[] = [];
     gameState.snake.forEach((segment, index) => {
-      // Only emit from head and every few segments to keep it clean and performant
       if (index % 2 === 0) {
         const x = segment.x * 20 + 10;
         const y = segment.y * 20 + 10;
@@ -201,22 +205,13 @@ export function Game() {
         newTrail.push(createTrailParticle(x, y, color));
       }
     });
-
     setParticles((prev) => [...prev.slice(-50), ...newTrail]);
   }, [gameState.lastMoveTime, gameState.status, selectedSkin]);
 
-  // Start game
   const startGame = useCallback(() => {
     playSound('start');
-    // Clear timers
-    if (bombTimerRef.current) {
-      clearTimeout(bombTimerRef.current);
-      bombTimerRef.current = null;
-    }
-    if (pineappleTimerRef.current) {
-      clearTimeout(pineappleTimerRef.current);
-      pineappleTimerRef.current = null;
-    }
+    if (bombTimerRef.current) { clearTimeout(bombTimerRef.current); bombTimerRef.current = null; }
+    if (pineappleTimerRef.current) { clearTimeout(pineappleTimerRef.current); pineappleTimerRef.current = null; }
     setGameState((prev) => ({
       ...getInitialState(),
       highScore: prev.highScore,
@@ -225,20 +220,14 @@ export function Game() {
     }));
   }, [playSound]);
 
-  // Toggle pause
   const togglePause = useCallback(() => {
     setGameState((prev) => {
-      if (prev.status === 'playing') {
-        return { ...prev, status: 'paused' };
-      }
-      if (prev.status === 'paused') {
-        return { ...prev, status: 'playing' };
-      }
+      if (prev.status === 'playing') return { ...prev, status: 'paused' };
+      if (prev.status === 'paused') return { ...prev, status: 'playing' };
       return prev;
     });
   }, []);
 
-  // Change direction
   const changeDirection = useCallback((newDirection: Direction) => {
     setGameState((prev) => {
       if (prev.status !== 'playing' && prev.status !== 'idle') return prev;
@@ -249,46 +238,45 @@ export function Game() {
     });
   }, []);
 
-  // Change difficulty
   const changeDifficulty = useCallback((difficulty: Difficulty) => {
     setGameState((prev) => ({ ...prev, difficulty }));
   }, []);
 
-  // Close tutorial
   const closeTutorial = useCallback(() => {
     setShowTutorial(false);
     markTutorialSeen();
   }, []);
 
-  // Change skin
   const changeSkin = useCallback((skin: SnakeSkin) => {
     setSelectedSkin(skin);
     saveSelectedSkin(skin.id);
   }, []);
 
-  // Restart game
-  const restartGame = useCallback(() => {
-    startGame();
-  }, [startGame]);
+  const handleLogin = useCallback((name: string, pass?: string) => {
+    if (performLogin(name, pass)) {
+      setUsername(name);
+      setGameState(prev => ({ ...prev, highScore: getHighScore() }));
+      setSelectedSkin(getSkinById(getSelectedSkin()));
+      playSound('start');
+    } else {
+      alert('Invalid password for this player name!');
+    }
+  }, [playSound]);
 
-  // Go to menu
-  const goToMenu = useCallback(() => {
-    if (bombTimerRef.current) {
-      clearTimeout(bombTimerRef.current);
-      bombTimerRef.current = null;
-    }
-    if (pineappleTimerRef.current) {
-      clearTimeout(pineappleTimerRef.current);
-      pineappleTimerRef.current = null;
-    }
-    setGameState((prev) => ({
-      ...getInitialState(),
-      highScore: prev.highScore,
-      difficulty: prev.difficulty,
-    }));
+  const handleLogout = useCallback(() => {
+    performLogout();
+    setUsername('');
+    setGameState(getInitialState());
   }, []);
 
-  // Keyboard controls
+  const restartGame = useCallback(() => startGame(), [startGame]);
+
+  const goToMenu = useCallback(() => {
+    if (bombTimerRef.current) { clearTimeout(bombTimerRef.current); bombTimerRef.current = null; }
+    if (pineappleTimerRef.current) { clearTimeout(pineappleTimerRef.current); pineappleTimerRef.current = null; }
+    setGameState((prev) => ({ ...getInitialState(), highScore: prev.highScore, difficulty: prev.difficulty }));
+  }, []);
+
   useKeyboard({
     currentDirection: gameState.direction,
     status: gameState.status,
@@ -297,26 +285,21 @@ export function Game() {
     onStart: startGame,
   });
 
-  // Handle swipe from canvas
   const handleSwipe = useCallback(
     (direction: Direction) => {
-      if (gameState.status === 'idle') {
-        startGame();
-      }
+      if (gameState.status === 'idle') startGame();
       changeDirection(direction);
     },
     [gameState.status, startGame, changeDirection]
   );
 
   return (
-    <div className="min-h-screen flex justify-center items-center p-5 relative overflow-hidden bg-game-dark">
+    <div className="min-h-screen flex flex-col justify-center items-center p-5 relative overflow-hidden bg-[#0f172a]">
       {/* Background animations */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="bg-blob absolute -top-25 -left-25" />
-        <div className="bg-blob absolute -bottom-25 -right-25 [animation-delay:-5s] [animation-duration:25s]" />
-        <div className="bg-blob bg-blob-red absolute top-2/5 left-[30%] w-[300px] h-[300px] [animation-delay:-10s]" />
-        <div className="bg-snake absolute top-[20%] -left-[400px]" />
-        <div className="bg-snake absolute bottom-[30%] -right-[400px] [animation-delay:-15s] [animation-direction:reverse]" />
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="bg-blob absolute -top-25 -left-25 opacity-30" />
+        <div className="bg-blob absolute -bottom-25 -right-25 [animation-delay:-5s] [animation-duration:25s] opacity-30" />
+        <BackgroundSnakes topPlayers={topPlayers} />
       </div>
 
       {/* Tutorial */}
@@ -337,94 +320,91 @@ export function Game() {
         <div
           key={fs.id}
           className="fixed font-bold text-2xl pointer-events-none z-[1000] animate-float-score"
-          style={{
-            left: fs.x,
-            top: fs.y,
-            color: fs.color,
-            textShadow: '0 0 10px currentColor',
-          }}
+          style={{ left: fs.x, top: fs.y, color: fs.color, textShadow: '0 0 10px currentColor' }}
         >
           {fs.text}
         </div>
       ))}
 
-      {/* Game Container */}
-      <div
-        className={`glass-container p-8 text-center ${isShaking ? 'animate-shake' : ''}`}
-      >
-        <h1 className="text-game-teal text-4xl font-bold mb-1 flex items-center justify-center gap-2 [text-shadow:2px_2px_4px_rgba(0,0,0,0.3)]">
-          🐍 Snake Game
-        </h1>
-        <p className="text-game-cyan mb-5">Made by Chahine</p>
-
-        <ScoreDisplay score={gameState.score} highScore={gameState.highScore} />
-
-        <DifficultySelector
-          difficulty={gameState.difficulty}
-          onChange={changeDifficulty}
-          disabled={gameState.status === 'playing'}
-        />
-
-        <SkinSelector
-          skins={SNAKE_SKINS}
-          selectedSkin={selectedSkin}
-          highScore={gameState.highScore}
-          onSelect={changeSkin}
-          disabled={gameState.status === 'playing'}
-        />
-
-        <GameCanvas
-          state={gameState}
-          skin={selectedSkin}
-          particles={particles}
-          onTouchStart={startGame}
-          onSwipe={handleSwipe}
-        />
-
-        {/* Control Buttons */}
-        <div className="mt-5 flex justify-center gap-4">
-          <button
-            onClick={() => {
-              if (gameState.status !== 'playing') {
-                restartGame();
-              }
-            }}
-            className="px-8 py-3 text-lg bg-gradient-to-br from-game-teal to-game-teal-dark text-game-dark font-bold rounded-lg flex items-center gap-2 hover:scale-105 hover:shadow-[0_5px_15px_rgba(78,204,163,0.4)] transition-all"
-          >
-            {gameState.status === 'playing' ? (
-              <>
-                <Gamepad2 className="w-5 h-5" /> Playing...
-              </>
-            ) : (
-              <>
-                <Play className="w-5 h-5" /> Start Game
-              </>
-            )}
-          </button>
-          <button
-            onClick={togglePause}
-            disabled={gameState.status !== 'playing' && gameState.status !== 'paused'}
-            className="px-8 py-3 text-lg bg-gradient-to-br from-game-red to-game-red-dark text-white font-bold rounded-lg flex items-center gap-2 hover:scale-105 hover:shadow-[0_5px_15px_rgba(233,69,96,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {gameState.status === 'paused' ? (
-              <>
-                <Play className="w-5 h-5" /> Resume
-              </>
-            ) : (
-              <>
-                <Pause className="w-5 h-5" /> Pause
-              </>
-            )}
-          </button>
+      {/* Login Screen */}
+      {!username && mounted && (
+        <div className="relative z-50">
+          <LoginForm onLogin={handleLogin} />
         </div>
+      )}
 
-        {/* Mobile Controls */}
-        <GameControls
-          onDirectionChange={changeDirection}
-          onStart={startGame}
-          isRunning={gameState.status === 'playing'}
-        />
-      </div>
+      {/* Main Game Interface */}
+      {username && mounted && (
+        <div className={`glass-container p-8 text-center relative z-20 ${isShaking ? 'animate-shake' : ''}`}>
+          <div className="flex justify-between items-start mb-1">
+            <h1 className="text-game-teal text-4xl font-bold flex items-center gap-2 [text-shadow:2px_2px_4px_rgba(0,0,0,0.3)]">
+              🐍 Snake
+            </h1>
+            <button onClick={handleLogout} className="p-2 text-white/40 hover:text-game-red transition-colors group relative" title="Logout">
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-game-cyan mb-5 text-left text-sm opacity-80">Welcome, <span className="text-white font-bold">{username}</span>!</p>
+
+          <ScoreDisplay score={gameState.score} highScore={gameState.highScore} />
+
+          <DifficultySelector
+            difficulty={gameState.difficulty}
+            onChange={changeDifficulty}
+            disabled={gameState.status === 'playing'}
+          />
+
+          <SkinSelector
+            skins={SNAKE_SKINS}
+            selectedSkin={selectedSkin}
+            highScore={gameState.highScore}
+            onSelect={changeSkin}
+            disabled={gameState.status === 'playing'}
+          />
+
+          <GameCanvas
+            state={gameState}
+            skin={selectedSkin}
+            particles={particles}
+            onTouchStart={startGame}
+            onSwipe={handleSwipe}
+          />
+
+          {/* Control Buttons */}
+          <div className="mt-5 flex justify-center gap-4">
+            <button
+              onClick={() => gameState.status !== 'playing' && restartGame()}
+              className="px-8 py-3 text-lg bg-gradient-to-br from-game-teal to-game-teal-dark text-game-dark font-bold rounded-lg flex items-center gap-2 hover:scale-105 hover:shadow-[0_5px_15px_rgba(78,204,163,0.4)] transition-all"
+            >
+              {gameState.status === 'playing' ? <><Gamepad2 className="w-5 h-5" /> Playing...</> : <><Play className="w-5 h-5" /> Start Game</>}
+            </button>
+            <button
+              onClick={togglePause}
+              disabled={gameState.status !== 'playing' && gameState.status !== 'paused'}
+              className="px-8 py-3 text-lg bg-gradient-to-br from-game-red to-game-red-dark text-white font-bold rounded-lg flex items-center gap-2 hover:scale-105 hover:shadow-[0_5px_15px_rgba(233,69,96,0.4)] transition-all disabled:opacity-50"
+            >
+              {gameState.status === 'paused' ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+              {gameState.status === 'paused' ? 'Resume' : 'Pause'}
+            </button>
+          </div>
+
+          <GameControls onDirectionChange={changeDirection} onStart={startGame} isRunning={gameState.status === 'playing'} />
+        </div>
+      )}
+
+      {/* Global Stats Footer */}
+      {mounted && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 flex justify-center gap-8 bg-black/20 backdrop-blur-md border-t border-white/5 z-40">
+          <div className="flex items-center gap-2 text-white/50 text-xs uppercase tracking-widest">
+            <Users className="w-4 h-4 text-game-teal animate-pulse" />
+            <span>Online: <span className="text-white font-bold">{onlinePlayers}</span></span>
+          </div>
+          <div className="flex items-center gap-2 text-white/50 text-xs uppercase tracking-widest">
+            <Eye className="w-4 h-4 text-game-cyan" />
+            <span>Visits: <span className="text-white font-bold">{visitCount}</span></span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

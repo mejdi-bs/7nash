@@ -32,32 +32,36 @@ export function SkinSelector({
               onClick={() => isUnlocked && onSelect(skin)}
               disabled={disabled || !isUnlocked}
               className={`
-                relative px-4 py-2 rounded-lg text-sm font-medium transition-all
+                relative px-5 py-3 rounded-xl text-sm font-bold transition-all min-w-[100px] flex flex-col items-center justify-center gap-1
                 ${isSelected
-                  ? 'ring-2 ring-game-teal scale-105 shadow-lg'
-                  : 'hover:scale-105'
+                  ? 'ring-[3px] ring-game-teal scale-110 shadow-[0_0_20px_rgba(78,204,163,0.4)] z-10'
+                  : 'hover:scale-105 active:scale-95'
                 }
                 ${isUnlocked
                   ? 'cursor-pointer'
-                  : 'cursor-not-allowed opacity-50'
+                  : 'cursor-not-allowed border border-white/5 bg-[#232931]/80 backdrop-blur-sm'
                 }
               `}
               style={{
                 background: isUnlocked
                   ? `linear-gradient(135deg, ${skin.headColor}, ${skin.bodyColor(3)})`
-                  : '#393e46',
-                color: isUnlocked ? '#232931' : '#888',
+                  : undefined,
+                color: isUnlocked ? '#1a1a2e' : '#94a3b8',
               }}
-              title={
-                isUnlocked
-                  ? skin.name
-                  : `Unlock at ${skin.unlockScore} points`
-              }
             >
               {!isUnlocked && (
-                <Lock className="w-3 h-3 absolute -top-1 -right-1 text-game-red" />
+                <>
+                  <Lock className="w-3.5 h-3.5 mb-1 opacity-80" />
+                  <span className="text-[10px] uppercase tracking-wider opacity-60">Locked</span>
+                  <span className="text-xs text-game-teal">{skin.unlockScore} pts</span>
+                </>
               )}
-              {skin.name}
+              {isUnlocked && (
+                <>
+                  <span className="drop-shadow-sm">{skin.name}</span>
+                  {isSelected && <span className="text-[10px] uppercase tracking-tighter opacity-70">Active</span>}
+                </>
+              )}
             </button>
           );
         })}

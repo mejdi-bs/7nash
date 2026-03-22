@@ -86,4 +86,8 @@ export const STORAGE_KEYS = {
   highScore: 'snakeHighScore',
   tutorialSeen: 'snakeTutorialSeen',
   selectedSkin: 'snakeSelectedSkin',
+  username: 'snakeUsername',
+  users: 'snakeUsers',
+  currentUser: 'snakeCurrentUser',
+  visits: 'snakeVisits',
 } as const;
