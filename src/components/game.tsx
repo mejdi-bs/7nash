@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Play, Pause, Gamepad2, LogOut, Users, Eye } from 'lucide-react';
+import { Play, Pause, Gamepad2, LogOut, Users, Eye, Loader2 } from 'lucide-react';
 import type { GameState, Direction, Difficulty } from '@/types';
 import {
   getInitialState,
@@ -17,10 +17,12 @@ import {
 } from '@/lib/game/engine';
 import {
   getHighScore,
+  getHighScoreSync,
   setHighScore as saveHighScore,
   hasSeenTutorial,
   markTutorialSeen,
   getSelectedSkin,
+  getSelectedSkinSync,
   setSelectedSkin as saveSelectedSkin,
   login as performLogin,
   logout as performLogout,
@@ -28,6 +30,7 @@ import {
   getVisitCount,
   incrementVisitCount,
   getTopPlayers,
+  clearUserCache,
 } from '@/lib/utils/storage';
 import { useGameLoop } from '@/hooks/use-game-loop';
 import { useSound } from '@/hooks/use-sound';
@@ -63,9 +66,10 @@ export function Game() {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [username, setUsername] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [visitCount, setVisitCount] = useState(0);
   const [onlinePlayers, setOnlinePlayers] = useState(12);
-  const [topPlayers, setTopPlayers] = useState<Array<{ name: string; highScore: number; skinId: string }>>([]);
+  const [topPlayers, setTopPlayers] = useState<Array<{ username: string; highScore: number; selectedSkin: string }>>([]);
 
   const bombTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pineappleTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -73,23 +77,29 @@ export function Game() {
 
   const { playSound } = useSound();
 
-  // Load initial state from localStorage safely after mount
+  // Load initial state after mount
   useEffect(() => {
     const savedUsername = getUsername();
     const tutorialSeen = hasSeenTutorial();
-    const savedSkinId = getSelectedSkin();
 
     // Increment visit count on mount
     const nextVisits = incrementVisitCount();
     setVisitCount(nextVisits);
-    setTopPlayers(getTopPlayers(3));
+
+    if (savedUsername) {
+      // Fetch user data from API
+      Promise.all([
+        getHighScore(),
+        getSelectedSkin(),
+        getTopPlayers(3)
+      ]).then(([highScore, skinId, players]) => {
+        setGameState(prev => ({ ...prev, highScore }));
+        setSelectedSkin(getSkinById(skinId));
+        setTopPlayers(players);
+      });
+    }
 
     setUsername(savedUsername);
-    setGameState((prev) => ({
-      ...prev,
-      highScore: getHighScore()
-    }));
-    setSelectedSkin(getSkinById(savedSkinId));
     setShowTutorial(!tutorialSeen);
     setMounted(true);
 
@@ -104,11 +114,11 @@ export function Game() {
     return () => clearInterval(interval);
   }, []);
 
-  // Sync high score to localStorage whenever it changes
+  // Sync high score to API whenever it changes
   useEffect(() => {
     if (mounted && gameState.highScore > 0) {
       saveHighScore(gameState.highScore);
-      setTopPlayers(getTopPlayers(3)); // Refresh top players list
+      getTopPlayers(3).then(setTopPlayers);
     }
   }, [gameState.highScore, mounted]);
 
@@ -252,19 +262,33 @@ export function Game() {
     saveSelectedSkin(skin.id);
   }, []);
 
-  const handleLogin = useCallback((name: string, pass?: string) => {
-    if (performLogin(name, pass)) {
-      setUsername(name);
-      setGameState(prev => ({ ...prev, highScore: getHighScore() }));
-      setSelectedSkin(getSkinById(getSelectedSkin()));
-      playSound('start');
-    } else {
-      alert('Invalid password for this player name!');
+  const handleLogin = useCallback(async (name: string, pass?: string) => {
+    setIsLoading(true);
+    try {
+      const result = await performLogin(name, pass);
+      if (result.success) {
+        setUsername(name);
+        const [highScore, skinId] = await Promise.all([
+          getHighScore(),
+          getSelectedSkin()
+        ]);
+        setGameState(prev => ({ ...prev, highScore }));
+        setSelectedSkin(getSkinById(skinId));
+        getTopPlayers(3).then(setTopPlayers);
+        playSound('start');
+      } else {
+        alert(result.error || 'Login failed');
+      }
+    } catch (error) {
+      alert('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   }, [playSound]);
 
   const handleLogout = useCallback(() => {
     performLogout();
+    clearUserCache();
     setUsername('');
     setGameState(getInitialState());
   }, []);
@@ -329,7 +353,7 @@ export function Game() {
       {/* Login Screen */}
       {!username && mounted && (
         <div className="relative z-50">
-          <LoginForm onLogin={handleLogin} />
+          <LoginForm onLogin={handleLogin} isLoading={isLoading} />
         </div>
       )}
 

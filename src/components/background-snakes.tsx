@@ -29,7 +29,7 @@ const SNAKE_NAMES = [
 ];
 
 interface BackgroundSnakesProps {
-    topPlayers?: Array<{ name: string; highScore: number; skinId: string }>;
+    topPlayers?: Array<{ username: string; highScore: number; selectedSkin: string }>;
 }
 
 export function BackgroundSnakes({ topPlayers = [] }: BackgroundSnakesProps) {
@@ -43,9 +43,9 @@ export function BackgroundSnakes({ topPlayers = [] }: BackgroundSnakesProps) {
         const champions = [...topPlayers];
         while (champions.length < 3) {
             champions.push({
-                name: DEFAULT_CHAMPIONS[champions.length].name,
+                username: DEFAULT_CHAMPIONS[champions.length].name,
                 highScore: 0,
-                skinId: DEFAULT_CHAMPIONS[champions.length].skinId
+                selectedSkin: DEFAULT_CHAMPIONS[champions.length].skinId
             });
         }
 
@@ -56,8 +56,8 @@ export function BackgroundSnakes({ topPlayers = [] }: BackgroundSnakesProps) {
 
             // Assign champions to the first 3 snakes
             const isChampion = i < 3;
-            const playerName = isChampion ? champions[i].name : SNAKE_NAMES[i % SNAKE_NAMES.length];
-            const skinId = isChampion ? champions[i].skinId : SNAKE_SKINS[i % skinsCount].id;
+            const playerName = isChampion ? champions[i].username : SNAKE_NAMES[i % SNAKE_NAMES.length];
+            const skinId = isChampion ? champions[i].selectedSkin : SNAKE_SKINS[i % skinsCount].id;
             const skinIndex = SNAKE_SKINS.findIndex(s => s.id === skinId);
 
             return {

@@ -3,45 +3,38 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Install dependencies first (with cache mount for speed)
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma/
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
-# Install dependencies
-RUN npm ci
-
-# Copy source files
+# Copy source and build
 COPY . .
-
-# Build the application
-RUN npm run build
+RUN --mount=type=cache,target=/root/.npm \
+    npm run build
 
 # Production stage
 FROM node:20-alpine AS runner
 
 WORKDIR /app
-
-# Set to production
 ENV NODE_ENV=production
 
-# Don't run as root
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-# Copy built files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/prisma ./prisma
 
-# Change ownership
 RUN chown -R nextjs:nodejs /app
-
 USER nextjs
 
-# Expose port
 EXPOSE 3000
-
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the application
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate && node server.js"]

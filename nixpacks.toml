@@ -1,7 +1,10 @@
 [phases.setup]
 
 [phases.build]
-cmds = ["echo 'No build needed'"]
+cmds = ["prisma generate && next build"]
 
 [start]
-cmd = "cd snake-game && python3 -m http.server $PORT"
+cmd = "npx prisma db push --skip-generate && node .next/standalone/server.js"
+
+[variables]
+NODE_ENV = "production"

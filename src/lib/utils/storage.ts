@@ -1,160 +1,191 @@
 import { STORAGE_KEYS } from '@/lib/game/constants';
 
 interface UserData {
-  password?: string;
+  username: string;
   highScore: number;
   selectedSkin: string;
 }
 
-type UsersMap = Record<string, UserData>;
-
-function getUsers(): UsersMap {
-  if (typeof window === 'undefined') return {};
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.users);
-    if (!stored) return {};
-    const parsed = JSON.parse(stored);
-    return typeof parsed === 'object' && parsed !== null ? parsed : {};
-  } catch (err) {
-    console.error('Failed to parse users:', err);
-    return {};
-  }
+interface LeaderboardEntry {
+  username: string;
+  highScore: number;
+  selectedSkin: string;
 }
 
-function saveUsers(users: UsersMap) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-  } catch (err) {
-    console.error('Failed to save users:', err);
-  }
-}
+// Cache for user data
+let userCache: UserData | null = null;
 
-// Get currently logged in username
+// Get currently logged in username (from localStorage session)
 export function getUsername(): string {
   if (typeof window === 'undefined') return '';
   return localStorage.getItem(STORAGE_KEYS.currentUser) || '';
 }
 
-// Login/Sign up a user
-export function login(username: string, password?: string): boolean {
-  if (typeof window === 'undefined') return false;
+// Login/Sign up a user via API
+export async function login(username: string, password?: string, selectedSkin?: string): Promise<{ success: boolean; isNew?: boolean; error?: string }> {
+  if (typeof window === 'undefined') return { success: false, error: 'Server-side' };
 
   const trimmedName = username.trim();
-  if (!trimmedName) return false;
+  if (!trimmedName) return { success: false, error: 'Username required' };
 
-  const users = getUsers();
-  const lowerName = trimmedName.toLowerCase();
+  try {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: trimmedName, password, selectedSkin })
+    });
 
-  if (users[lowerName]) {
-    // If the account HAS a password, check it
-    if (users[lowerName].password && users[lowerName].password !== password) {
-      return false;
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Login failed' };
     }
-    // If it didn't have a password but user is trying to log in with one, 
-    // we let them in and set the password for future protection
-    if (!users[lowerName].password && password) {
-      users[lowerName].password = password;
-      saveUsers(users);
-    }
-  } else {
-    // Create new user
-    users[lowerName] = {
-      password: password || undefined,
-      highScore: 0,
-      selectedSkin: 'classic'
-    };
-    saveUsers(users);
+
+    // Store session locally
+    localStorage.setItem(STORAGE_KEYS.currentUser, data.username.toLowerCase());
+    userCache = data;
+
+    return { success: true, isNew: data.isNew };
+  } catch (error) {
+    console.error('Login error:', error);
+    return { success: false, error: 'Network error' };
   }
-
-  localStorage.setItem(STORAGE_KEYS.currentUser, lowerName);
-  return true;
 }
 
 export function logout() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(STORAGE_KEYS.currentUser);
+  userCache = null;
 }
 
-// Get high score from localStorage (USER SPECIFIC)
-export function getHighScore(): number {
-  if (typeof window === 'undefined') return 0;
+// Get user data from API
+async function fetchUserData(): Promise<UserData | null> {
   const username = getUsername();
-  if (!username) return 0;
+  if (!username) return null;
 
-  const users = getUsers();
-  return users[username]?.highScore || 0;
-}
+  if (userCache) return userCache;
 
-// Set high score in localStorage (USER SPECIFIC)
-export function setHighScore(score: number): void {
-  const username = getUsername();
-  if (!username) return;
+  try {
+    const response = await fetch(`/api/users?username=${encodeURIComponent(username)}`);
+    if (!response.ok) return null;
 
-  const users = getUsers();
-  if (users[username]) {
-    users[username].highScore = Math.max(users[username].highScore, score);
-    saveUsers(users);
+    userCache = await response.json();
+    return userCache;
+  } catch (error) {
+    console.error('Fetch user error:', error);
+    return null;
   }
 }
 
-// Check if tutorial has been seen
+// Get high score (async)
+export async function getHighScore(): Promise<number> {
+  const user = await fetchUserData();
+  return user?.highScore || 0;
+}
+
+// Get high score sync (from cache, returns 0 if not cached)
+export function getHighScoreSync(): number {
+  return userCache?.highScore || 0;
+}
+
+// Set high score via API
+export async function setHighScore(score: number): Promise<void> {
+  const username = getUsername();
+  if (!username) return;
+
+  try {
+    const response = await fetch('/api/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, highScore: score })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (userCache) {
+        userCache.highScore = data.highScore;
+      }
+    }
+  } catch (error) {
+    console.error('Set high score error:', error);
+  }
+}
+
+// Check if tutorial has been seen (local only)
 export function hasSeenTutorial(): boolean {
   if (typeof window === 'undefined') return false;
   return localStorage.getItem(STORAGE_KEYS.tutorialSeen) === 'true';
 }
 
-// Mark tutorial as seen
+// Mark tutorial as seen (local only)
 export function markTutorialSeen(): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEYS.tutorialSeen, 'true');
 }
 
-// Get selected skin from localStorage (USER SPECIFIC)
-export function getSelectedSkin(): string {
-  const username = getUsername();
-  if (!username) return 'classic';
-
-  const users = getUsers();
-  return users[username]?.selectedSkin || 'classic';
+// Get selected skin (async)
+export async function getSelectedSkin(): Promise<string> {
+  const user = await fetchUserData();
+  return user?.selectedSkin || 'classic';
 }
 
-// Set selected skin in localStorage (USER SPECIFIC)
-export function setSelectedSkin(skinId: string): void {
+// Get selected skin sync (from cache)
+export function getSelectedSkinSync(): string {
+  return userCache?.selectedSkin || 'classic';
+}
+
+// Set selected skin via API
+export async function setSelectedSkin(skinId: string): Promise<void> {
   const username = getUsername();
   if (!username) return;
 
-  const users = getUsers();
-  if (users[username]) {
-    users[username].selectedSkin = skinId;
-    saveUsers(users);
+  try {
+    const response = await fetch('/api/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, selectedSkin: skinId })
+    });
+
+    if (response.ok) {
+      if (userCache) {
+        userCache.selectedSkin = skinId;
+      }
+    }
+  } catch (error) {
+    console.error('Set skin error:', error);
   }
 }
-// Get top N players by high score
-export function getTopPlayers(count: number = 3): Array<{ name: string; highScore: number; skinId: string }> {
-  const users = getUsers();
-  return Object.entries(users)
-    .map(([name, data]) => ({
-      name,
-      highScore: data.highScore,
-      skinId: data.selectedSkin
-    }))
-    .sort((a, b) => b.highScore - a.highScore)
-    .slice(0, count);
+
+// Get top N players from API
+export async function getTopPlayers(count: number = 3): Promise<LeaderboardEntry[]> {
+  try {
+    const response = await fetch(`/api/leaderboard?limit=${count}`);
+    if (!response.ok) return [];
+
+    return await response.json();
+  } catch (error) {
+    console.error('Get leaderboard error:', error);
+    return [];
+  }
 }
 
-// Get total visit count
+// Get total visit count (local only)
 export function getVisitCount(): number {
   if (typeof window === 'undefined') return 0;
   const stored = localStorage.getItem(STORAGE_KEYS.visits);
   return stored ? parseInt(stored, 10) : 0;
 }
 
-// Increment visit count
+// Increment visit count (local only)
 export function incrementVisitCount(): number {
   if (typeof window === 'undefined') return 0;
   const current = getVisitCount();
   const next = current + 1;
   localStorage.setItem(STORAGE_KEYS.visits, next.toString());
   return next;
+}
+
+// Clear user cache (call after logout)
+export function clearUserCache() {
+  userCache = null;
 }
