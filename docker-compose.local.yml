@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_user=snakeuser
+      - postgres_password=snakepass
+      - postgres_db=snakedb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://snakeuser:snakepass@postgres:5432/snakedb
+      - NODE_ENV=production
