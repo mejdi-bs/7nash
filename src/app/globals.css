@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+body {
+  background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #1a1a2e);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  min-height: 100vh;
+}
+
+/* Background blobs */
+.bg-blob {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(78, 204, 163, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: blobMove 20s infinite alternate;
+}
+
+.bg-blob-red {
+  background: radial-gradient(circle, rgba(233, 69, 96, 0.08) 0%, transparent 70%);
+}
+
+/* Background ghost snakes */
+.bg-snake {
+  position: absolute;
+  width: 300px;
+  height: 15px;
+  background: linear-gradient(90deg, transparent, rgba(78, 204, 163, 0.08), transparent);
+  border-radius: 20px;
+  filter: blur(2px);
+  animation: slither 30s linear infinite;
+}
+
+/* Canvas styling */
+#gameCanvas {
+  background: #1a1a2e;
+  border: 4px solid #4ecca3;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(78, 204, 163, 0.3);
+}
+
+/* Glassmorphism container */
+.glass-container {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Keyframes */
+@keyframes gradientBG {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes blobMove {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(100px, 50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-50px, 100px) scale(0.9);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes slither {
+  0% {
+    transform: translateX(0) translateY(0) rotate(5deg);
+  }
+  25% {
+    transform: translateX(calc(100vw + 600px)) translateY(100px) rotate(-5deg);
+  }
+  50% {
+    transform: translateX(calc(200vw + 1200px)) translateY(0) rotate(5deg);
+  }
+  51% {
+    transform: translateX(-400px) translateY(0);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(5deg);
+  }
+}
+
+@keyframes shake {
+  10%, 90% {
+    transform: translateX(-1px);
+  }
+  20%, 80% {
+    transform: translateX(2px);
+  }
+  30%, 50%, 70% {
+    transform: translateX(-4px);
+  }
+  40%, 60% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes floatingScore {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-60px);
+    opacity: 0;
+  }
+}
+
+/* Responsive canvas */
+@media (max-width: 700px) {
+  #gameCanvas {
+    width: 320px !important;
+    height: 320px !important;
+  }
+}
