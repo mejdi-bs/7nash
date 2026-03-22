@@ -213,6 +213,23 @@ export function Game() {
     startGame();
   }, [startGame]);
 
+  // Go to menu
+  const goToMenu = useCallback(() => {
+    if (bombTimerRef.current) {
+      clearTimeout(bombTimerRef.current);
+      bombTimerRef.current = null;
+    }
+    if (pineappleTimerRef.current) {
+      clearTimeout(pineappleTimerRef.current);
+      pineappleTimerRef.current = null;
+    }
+    setGameState((prev) => ({
+      ...getInitialState(),
+      highScore: prev.highScore,
+      difficulty: prev.difficulty,
+    }));
+  }, []);
+
   // Keyboard controls
   useKeyboard({
     currentDirection: gameState.direction,
@@ -253,6 +270,7 @@ export function Game() {
           score={gameState.score}
           highScore={gameState.highScore}
           onRestart={restartGame}
+          onMenu={goToMenu}
         />
       )}
 
