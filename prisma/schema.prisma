@@ -25,7 +25,13 @@ model Visit {
 }
 
 model SiteStats {
-  id        String   @id @default("site-stats")
-  visits    Int      @default(0)
-  updatedAt DateTime @updatedAt
+  id           String   @id @default("site-stats")
+  totalVisits  Int      @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model DailyVisit {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  count     Int      @default(0)
 }
