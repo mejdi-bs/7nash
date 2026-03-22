@@ -19,20 +19,17 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
-model Visit {
-  id        String   @id @default(cuid())
-  count     Int      @default(0)
-  updatedAt DateTime @updatedAt
-}
-
 model SiteStats {
-  id           String   @id @default("site-stats")
-  totalVisits  Int      @default(0)
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default("site-stats")
+  totalPlayers    Int      @default(0) // Total unique players who opened game
+  updatedAt       DateTime @updatedAt
 }
 
-model DailyVisit {
+model DailyPlayerVisit {
   id        String   @id @default(cuid())
-  date      DateTime @unique
-  count     Int      @default(0)
+  date      DateTime
+  username  String
+  createdAt DateTime @default(now())
+
+  @@unique([date, username]) // One record per user per day
 }

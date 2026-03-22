@@ -28,8 +28,8 @@ import {
   login as performLogin,
   logout as performLogout,
   getUsername,
-  getVisitCount,
-  incrementVisitCount,
+  getPlayerCount,
+  recordPlayerVisit,
   getTopPlayers,
   clearUserCache,
 } from '@/lib/utils/storage';
@@ -85,8 +85,10 @@ export function Game() {
     const savedUsername = getUsername();
     const tutorialSeen = hasSeenTutorial();
 
-    // Increment visit count on mount
-    incrementVisitCount().then(setVisitCount).catch(() => {});
+    // Record player visit
+    if (savedUsername) {
+      recordPlayerVisit(savedUsername).then(data => setVisitCount(data.today)).catch(() => {});
+    }
 
     if (savedUsername) {
       // Fetch user data from API

@@ -181,25 +181,29 @@ export async function getTopPlayers(count: number = 3): Promise<LeaderboardEntry
   }
 }
 
-// Get total visit count from API
-export async function getVisitCount(): Promise<number> {
+// Get total player count from API
+export async function getPlayerCount(): Promise<{ total: number; today: number }> {
   try {
     const res = await fetch('/api/stats');
     const data = await res.json();
-    return data.visits || 0;
+    return { total: data.totalPlayers || 0, today: data.todayPlayers || 0 };
   } catch {
-    return 0;
+    return { total: 0, today: 0 };
   }
 }
 
-// Increment visit count via API
-export async function incrementVisitCount(): Promise<number> {
+// Record player visit via API
+export async function recordPlayerVisit(username: string): Promise<{ total: number; today: number }> {
   try {
-    const res = await fetch('/api/stats', { method: 'POST' });
+    const res = await fetch('/api/stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    });
     const data = await res.json();
-    return data.visits || 0;
+    return { total: data.totalPlayers || 0, today: data.todayPlayers || 0 };
   } catch {
-    return 0;
+    return { total: 0, today: 0 };
   }
 }
 
