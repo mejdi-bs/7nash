@@ -169,20 +169,26 @@ export async function getTopPlayers(count: number = 3): Promise<LeaderboardEntry
   }
 }
 
-// Get total visit count (local only)
-export function getVisitCount(): number {
-  if (typeof window === 'undefined') return 0;
-  const stored = localStorage.getItem(STORAGE_KEYS.visits);
-  return stored ? parseInt(stored, 10) : 0;
+// Get total visit count from API
+export async function getVisitCount(): Promise<number> {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    return data.visits || 0;
+  } catch {
+    return 0;
+  }
 }
 
-// Increment visit count (local only)
-export function incrementVisitCount(): number {
-  if (typeof window === 'undefined') return 0;
-  const current = getVisitCount();
-  const next = current + 1;
-  localStorage.setItem(STORAGE_KEYS.visits, next.toString());
-  return next;
+// Increment visit count via API
+export async function incrementVisitCount(): Promise<number> {
+  try {
+    const res = await fetch('/api/stats', { method: 'POST' });
+    const data = await res.json();
+    return data.visits || 0;
+  } catch {
+    return 0;
+  }
 }
 
 // Clear user cache (call after logout)

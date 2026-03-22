@@ -83,8 +83,7 @@ export function Game() {
     const tutorialSeen = hasSeenTutorial();
 
     // Increment visit count on mount
-    const nextVisits = incrementVisitCount();
-    setVisitCount(nextVisits);
+    incrementVisitCount().then(setVisitCount).catch(() => {});
 
     if (savedUsername) {
       // Fetch user data from API
