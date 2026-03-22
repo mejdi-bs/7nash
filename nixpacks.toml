@@ -1,0 +1,7 @@
+[phases.setup]
+
+[phases.build]
+cmds = ["echo 'No build needed'"]
+
+[start]
+cmd = "cd snake-game && python3 -m http.server $PORT"
