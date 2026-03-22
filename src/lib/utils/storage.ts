@@ -4,6 +4,7 @@ interface UserData {
   username: string;
   highScore: number;
   selectedSkin: string;
+  privateSkins?: string[];
 }
 
 interface LeaderboardEntry {
@@ -132,6 +133,17 @@ export async function getSelectedSkin(): Promise<string> {
 // Get selected skin sync (from cache)
 export function getSelectedSkinSync(): string {
   return userCache?.selectedSkin || 'classic';
+}
+
+// Get private skins (async)
+export async function getPrivateSkins(): Promise<string[]> {
+  const user = await fetchUserData();
+  return user?.privateSkins || [];
+}
+
+// Get private skins sync (from cache)
+export function getPrivateSkinsSync(): string[] {
+  return userCache?.privateSkins || [];
 }
 
 // Set selected skin via API

@@ -13,6 +13,7 @@ model User {
   passwordHash String?
   highScore    Int      @default(0)
   selectedSkin String   @default("classic")
+  privateSkins String   @default("") // Comma-separated list of private skin IDs
   lastActiveAt DateTime @default(now())
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

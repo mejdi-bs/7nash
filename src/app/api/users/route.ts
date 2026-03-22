@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     username: user.username,
     highScore: user.highScore,
-    selectedSkin: user.selectedSkin
+    selectedSkin: user.selectedSkin,
+    privateSkins: user.privateSkins ? user.privateSkins.split(',').filter(Boolean) : []
   });
 }
 
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
         username: existingUser.username,
         highScore: existingUser.highScore,
         selectedSkin: selectedSkin || existingUser.selectedSkin,
+        privateSkins: existingUser.privateSkins ? existingUser.privateSkins.split(',').filter(Boolean) : [],
         isNew: false
       });
     }
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
       username: newUser.username,
       highScore: newUser.highScore,
       selectedSkin: newUser.selectedSkin,
+      privateSkins: [],
       isNew: true
     });
   } catch (error) {
@@ -140,7 +143,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({
         username: user.username,
         highScore: user.highScore,
-        selectedSkin: user.selectedSkin
+        selectedSkin: user.selectedSkin,
+        privateSkins: user.privateSkins ? user.privateSkins.split(',').filter(Boolean) : []
       });
     }
 
@@ -152,7 +156,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({
       username: updated.username,
       highScore: updated.highScore,
-      selectedSkin: updated.selectedSkin
+      selectedSkin: updated.selectedSkin,
+      privateSkins: updated.privateSkins ? updated.privateSkins.split(',').filter(Boolean) : []
     });
   } catch (error) {
     console.error('User update error:', error);

@@ -6,6 +6,7 @@ export interface SnakeSkin {
   bodyColor: (index: number) => string;
   glowColor: string;
   unlockScore: number;
+  isPrivate?: boolean; // Hidden from selector, only for special users
 }
 
 export const SNAKE_SKINS: SnakeSkin[] = [
@@ -57,10 +58,45 @@ export const SNAKE_SKINS: SnakeSkin[] = [
     glowColor: '#ff0080',
     unlockScore: 100,
   },
+  // Private skins (not shown in selector, only for special users)
+  {
+    id: 'vip-gold',
+    name: 'VIP Gold',
+    headColor: '#ffdf00',
+    bodyColor: (i) => `rgb(255, ${Math.max(180, 223 - i * 2)}, ${Math.max(0, 50 - i)})`,
+    glowColor: '#ffdf00',
+    unlockScore: 999999,
+    isPrivate: true,
+  },
+  {
+    id: 'admin',
+    name: 'Admin',
+    headColor: '#ff1744',
+    bodyColor: (i) => `rgb(${Math.max(200, 255 - i * 3)}, ${Math.max(20, 50 - i)}, ${Math.max(40, 80 - i)})`,
+    glowColor: '#ff1744',
+    unlockScore: 999999,
+    isPrivate: true,
+  },
+  {
+    id: 'galaxy',
+    name: 'Galaxy',
+    headColor: '#e040fb',
+    bodyColor: (i) => `hsl(${270 + (i * 5) % 60}, 90%, ${60 + Math.sin(i) * 15}%)`,
+    glowColor: '#e040fb',
+    unlockScore: 999999,
+    isPrivate: true,
+  },
 ];
 
-export function getUnlockedSkins(highScore: number): SnakeSkin[] {
-  return SNAKE_SKINS.filter((skin) => highScore >= skin.unlockScore);
+export function getUnlockedSkins(highScore: number, privateSkins: string[] = []): SnakeSkin[] {
+  return SNAKE_SKINS.filter((skin) => {
+    // Private skins: only show if user has access
+    if (skin.isPrivate) {
+      return privateSkins.includes(skin.id);
+    }
+    // Normal skins: unlocked by score
+    return highScore >= skin.unlockScore;
+  });
 }
 
 export function getSkinById(id: string): SnakeSkin {

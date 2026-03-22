@@ -7,6 +7,7 @@ interface SkinSelectorProps {
   skins: SnakeSkin[];
   selectedSkin: SnakeSkin;
   highScore: number;
+  privateSkins?: string[];
   onSelect: (skin: SnakeSkin) => void;
   disabled?: boolean;
 }
@@ -15,15 +16,19 @@ export function SkinSelector({
   skins,
   selectedSkin,
   highScore,
+  privateSkins = [],
   onSelect,
   disabled,
 }: SkinSelectorProps) {
+  // Filter out private skins user doesn't have access to
+  const visibleSkins = skins.filter((skin) => !skin.isPrivate || privateSkins.includes(skin.id));
+
   return (
     <div className="mb-4">
       <p className="text-game-cyan text-sm mb-2">Snake Skin</p>
       <div className="flex flex-wrap justify-center gap-2">
-        {skins.map((skin) => {
-          const isUnlocked = highScore >= skin.unlockScore;
+        {visibleSkins.map((skin) => {
+          const isUnlocked = skin.isPrivate ? privateSkins.includes(skin.id) : highScore >= skin.unlockScore;
           const isSelected = selectedSkin.id === skin.id;
 
           return (

@@ -24,6 +24,7 @@ import {
   getSelectedSkin,
   getSelectedSkinSync,
   setSelectedSkin as saveSelectedSkin,
+  getPrivateSkins,
   login as performLogin,
   logout as performLogout,
   getUsername,
@@ -64,6 +65,7 @@ export function Game() {
     Array<{ id: number; text: string; color: string; x: number; y: number }>
   >([]);
   const [selectedSkin, setSelectedSkin] = useState<SnakeSkin>(() => getSkinById('classic'));
+  const [privateSkins, setPrivateSkins] = useState<string[]>([]);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [username, setUsername] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -91,10 +93,12 @@ export function Game() {
       Promise.all([
         getHighScore(),
         getSelectedSkin(),
+        getPrivateSkins(),
         getTopPlayers(3)
-      ]).then(([highScore, skinId, players]) => {
+      ]).then(([highScore, skinId, privateSkins, players]) => {
         setGameState(prev => ({ ...prev, highScore }));
         setSelectedSkin(getSkinById(skinId));
+        setPrivateSkins(privateSkins);
         setTopPlayers(players);
       });
     }
@@ -284,12 +288,14 @@ export function Game() {
       const result = await performLogin(name, pass);
       if (result.success) {
         setUsername(name);
-        const [highScore, skinId] = await Promise.all([
+        const [highScore, skinId, privateSkins] = await Promise.all([
           getHighScore(),
-          getSelectedSkin()
+          getSelectedSkin(),
+          getPrivateSkins()
         ]);
         setGameState(prev => ({ ...prev, highScore }));
         setSelectedSkin(getSkinById(skinId));
+        setPrivateSkins(privateSkins);
         getTopPlayers(3).then(setTopPlayers);
         playSound('start');
       } else {
@@ -441,6 +447,7 @@ export function Game() {
                 skins={SNAKE_SKINS}
                 selectedSkin={selectedSkin}
                 highScore={gameState.highScore}
+                privateSkins={privateSkins}
                 onSelect={changeSkin}
                 disabled={gameState.status === 'playing'}
               />
