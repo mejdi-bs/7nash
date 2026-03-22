@@ -1,0 +1,575 @@
+/* Snake Game Styles - Made for Chahine! */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #1a1a2e);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.bg-animation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.bg-blob {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(78, 204, 163, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+    animation: blobMove 20s infinite alternate;
+}
+
+.blob-1 {
+    top: -100px;
+    left: -100px;
+}
+
+/* Background "Ghost" Snakes */
+.bg-snake {
+    position: absolute;
+    width: 300px;
+    height: 15px;
+    background: linear-gradient(90deg, transparent, rgba(78, 204, 163, 0.08), transparent);
+    border-radius: 20px;
+    filter: blur(2px);
+    z-index: -1;
+    animation: slither 30s linear infinite;
+}
+
+.snake-1 {
+    top: 20%;
+    left: -400px;
+}
+
+.snake-2 {
+    bottom: 30%;
+    right: -400px;
+    animation-delay: -15s;
+    animation-direction: reverse;
+}
+
+@keyframes slither {
+    0% {
+        transform: translateX(0) translateY(0) rotate(5deg);
+    }
+
+    25% {
+        transform: translateX(calc(100vw + 600px)) translateY(100px) rotate(-5deg);
+    }
+
+    50% {
+        transform: translateX(calc(200vw + 1200px)) translateY(0) rotate(5deg);
+    }
+
+    51% {
+        transform: translateX(-400px) translateY(0);
+    }
+
+    100% {
+        transform: translateX(0) translateY(0) rotate(5deg);
+    }
+}
+
+.blob-2 {
+    bottom: -100px;
+    right: -100px;
+    animation-delay: -5s;
+    animation-duration: 25s;
+}
+
+.blob-3 {
+    top: 40%;
+    left: 30%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(233, 69, 96, 0.08) 0%, transparent 70%);
+    animation-delay: -10s;
+}
+
+@keyframes blobMove {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate(100px, 50px) scale(1.1);
+    }
+
+    66% {
+        transform: translate(-50px, 100px) scale(0.9);
+    }
+
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+/* Lucide Icons Alignment */
+i[data-lucide] {
+    vertical-align: middle;
+}
+
+h1 i[data-lucide],
+h2 i[data-lucide],
+h3 i[data-lucide] {
+    margin-right: 10px;
+}
+
+
+
+/* Tutorial Overlay */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.tutorial-overlay.hidden {
+    display: none;
+}
+
+.tutorial-content {
+    background: linear-gradient(145deg, #232931, #393e46);
+    padding: 30px 40px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 400px;
+    border: 3px solid #4ecca3;
+    box-shadow: 0 0 30px rgba(78, 204, 163, 0.3);
+}
+
+.tutorial-content h2 {
+    color: #4ecca3;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+
+.tutorial-section {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.tutorial-section h3 {
+    color: #e94560;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+
+.tutorial-section p {
+    color: #a8dadc;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.control-keys {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    margin: 15px 0;
+}
+
+.key-row {
+    display: flex;
+    gap: 5px;
+}
+
+.key {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(145deg, #4ecca3, #38b58a);
+    color: #1a1a2e;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: 0 3px 0 #2d9b73;
+}
+
+.tutorial-btn {
+    margin-top: 15px;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    background: linear-gradient(145deg, #4ecca3, #38b58a);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tutorial-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 20px rgba(78, 204, 163, 0.5);
+}
+
+.game-container.shake {
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes shake {
+
+    10%,
+    90% {
+        transform: translateX(-1px);
+    }
+
+    20%,
+    80% {
+        transform: translateX(2px);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translateX(-4px);
+    }
+
+    40%,
+    60% {
+        transform: translateX(4px);
+    }
+}
+
+.game-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+h1 {
+    color: #4ecca3;
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #a8dadc;
+    font-size: 1rem;
+    margin-bottom: 20px;
+}
+
+.difficulty-selector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    color: #a8dadc;
+    font-size: 0.95rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px 20px;
+    border-radius: 12px;
+}
+
+.diff-btn {
+    padding: 8px 18px;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: #a8dadc;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.diff-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.diff-btn.active {
+    background: linear-gradient(145deg, #4ecca3, #38b58a);
+    color: #1a1a2e;
+    border-color: #4ecca3;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(78, 204, 163, 0.3);
+}
+
+.score-board {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.score,
+.high-score {
+    background: linear-gradient(145deg, #232931, #393e46);
+    padding: 10px 25px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.score span,
+.high-score span {
+    color: #4ecca3;
+}
+
+#gameCanvas {
+    background: #1a1a2e;
+    border: 4px solid #4ecca3;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(78, 204, 163, 0.3);
+    display: block;
+    margin: 0 auto;
+}
+
+.controls {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+button {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#startBtn {
+    background: linear-gradient(145deg, #4ecca3, #38b58a);
+    color: #1a1a2e;
+}
+
+#startBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(78, 204, 163, 0.4);
+}
+
+#pauseBtn {
+    background: linear-gradient(145deg, #e94560, #c73e54);
+    color: white;
+}
+
+#pauseBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+}
+
+
+
+/* Mobile Controls */
+.mobile-controls {
+    margin-top: 20px;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    display: flex;
+}
+
+.arrow-row {
+    display: flex;
+    gap: 5px;
+}
+
+.arrow-btn {
+    width: 70px;
+    height: 60px;
+    font-size: 1.1rem;
+    background: linear-gradient(145deg, #4ecca3, #38b58a);
+    color: #1a1a2e;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+}
+
+.arrow-btn:active {
+    transform: scale(0.95);
+}
+
+/* Game Over Overlay */
+.game-over {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.game-over-content {
+    background: linear-gradient(145deg, #232931, #393e46);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    border: 3px solid #e94560;
+}
+
+.game-over-content h2 {
+    color: #e94560;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.game-over-content p {
+    color: #fff;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+}
+
+.game-over-content button {
+    background: linear-gradient(145deg, #4ecca3, #38b58a);
+    color: #1a1a2e;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+    body {
+        padding: 10px;
+    }
+
+    .game-container {
+        padding: 15px;
+        width: 100%;
+        max-width: 400px;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    #gameCanvas {
+        width: 320px;
+        height: 320px;
+    }
+
+
+
+    .score-board {
+        gap: 15px;
+    }
+
+    .score,
+    .high-score {
+        padding: 8px 15px;
+        font-size: 1rem;
+    }
+
+    .controls button {
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+
+    .arrow-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 1.3rem;
+    }
+
+    .tutorial-content {
+        margin: 15px;
+        padding: 20px;
+    }
+
+    .tutorial-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .key {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .tutorial-btn {
+        padding: 12px 30px;
+        font-size: 1rem;
+    }
+}
+
+/* Tablet and up - show both keyboard and touch controls */
+@media (min-width: 601px) {
+    .mobile-controls {
+        display: flex;
+    }
+}
+
+.floating-score {
+    position: fixed;
+    color: #4ecca3;
+    font-weight: bold;
+    font-size: 1.5rem;
+    pointer-events: none;
+    z-index: 1000;
+    text-shadow: 0 0 10px rgba(78, 204, 163, 0.5);
+    animation: floatingScore 0.8s ease-out forwards;
+}
+
+@keyframes floatingScore {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-60px);
+        opacity: 0;
+    }
+}

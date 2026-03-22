@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐍 Chahine's Snake Game</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="bg-animation">
+        <div class="bg-blob blob-1"></div>
+        <div class="bg-blob blob-2"></div>
+        <div class="bg-blob blob-3"></div>
+        <div class="bg-snake snake-1"></div>
+        <div class="bg-snake snake-2"></div>
+    </div>
+    <!-- Tutorial Popup -->
+    <div class="tutorial-overlay hidden" id="tutorial">
+        <div class="tutorial-content">
+            <h2><i data-lucide="gamepad-2"></i> Welcome to Snake!</h2>
+            <div class="tutorial-section">
+                <h3><i data-lucide="target"></i> Goal</h3>
+                <p>Eat the red apple <i data-lucide="apple" size="20"></i> to grow longer and score points!</p>
+            </div>
+            <div class="tutorial-section">
+                <h3><i data-lucide="keyboard"></i> Controls</h3>
+                <div class="control-keys">
+                    <div class="key-row">
+                        <span class="key">Z</span>
+                    </div>
+                    <div class="key-row">
+                        <span class="key">Q</span>
+                        <span class="key">S</span>
+                        <span class="key">D</span>
+                    </div>
+                </div>
+                <p>Or use the buttons below the game!</p>
+            </div>
+            <div class="tutorial-section">
+                <h3><i data-lucide="alert-triangle"></i> Watch Out!</h3>
+                <p>Don't hit the walls or your own tail!</p>
+            </div>
+            <button id="startTutorial" class="tutorial-btn"><i data-lucide="rocket"></i> Let's Play!</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <h1><i data-lucide="snake" size="40"></i> Snake Game</h1>
+        <p class="subtitle">Made by Chahine</p>
+
+        <div class="score-board">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="high-score">Best: <span id="highScore">0</span></div>
+        </div>
+
+        <div class="difficulty-selector">
+            <span>Speed:</span>
+            <button class="diff-btn active" data-speed="150">Easy</button>
+            <button class="diff-btn" data-speed="100">Medium</button>
+            <button class="diff-btn" data-speed="60">Hard</button>
+        </div>
+
+        <canvas id="gameCanvas" width="700" height="700"></canvas>
+
+        <div class="controls">
+            <button id="startBtn"><i data-lucide="play"></i> Start Game</button>
+            <button id="pauseBtn"><i data-lucide="pause"></i> Pause</button>
+        </div>
+
+
+
+        <!-- Mobile Controls -->
+        <div class="mobile-controls">
+            <button class="arrow-btn" id="upBtn">Z <i data-lucide="chevron-up"></i></button>
+            <div class="arrow-row">
+                <button class="arrow-btn" id="leftBtn">Q <i data-lucide="chevron-left"></i></button>
+                <button class="arrow-btn" id="downBtn">S <i data-lucide="chevron-down"></i></button>
+                <button class="arrow-btn" id="rightBtn">D <i data-lucide="chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
